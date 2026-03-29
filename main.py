@@ -1,48 +1,50 @@
-import sys
-import pygame
+import streamlit as st
 from source.api.management.scene_manager import SceneManager
 from source.api.management.sound_manager import SoundManager
 import data.constants as constants
 from source.api.management.options_manager import OptionsManager
+import time
 
-"""
-This is the main file of the game. It initializes PyGame and creates the screen and clock. It also creates the sound manager and scene manager.
-The main event loop is also located here.
-"""
+# Initialize game components
+options = OptionsManager()  # Load options
+sound_manager = SoundManager()
+sound_manager.set_options(options)
+sound_manager.load_music()
+sound_manager.play_music()
 
-def main():
-    """
-    The main function of the game. It initializes PyGame and creates the screen and clock. It also creates the sound manager and scene manager.
-    The main event loop is also located here.
-    """
+# Initialize scene manager
+scene_manager = SceneManager(None, "main_menu")  # Streamlit doesn't use a PyGame screen
 
-    # Initialize PyGame
-    pygame.init()
+st.title("🎮 Pinball Game")
 
-    options = OptionsManager() # Load options
-    screen = pygame.display.set_mode(options.resolution) # Create the screen
-    clock = pygame.time.Clock() # Create clock
+# Placeholder for the game "screen"
+screen_placeholder = st.empty()
 
-    sound_manager = SoundManager() # Create sound manager
-    sound_manager.set_options(options) # Set options
-    sound_manager.load_music() # Load music
-    sound_manager.play_music() # Play music
+# Main game loop simulation using Streamlit
+if "game_running" not in st.session_state:
+    st.session_state.game_running = True
 
-    scene_manager = SceneManager(screen, "main_menu") # Create scene manager and set default scene to main_menu
+def update_game():
+    # Update the active scene
+    scene_manager.active_scene.update(constants.DELTA_TIME, [])
 
-    # Main event loop
-    while True:
-        events = pygame.event.get() # Get all events
-        sound_manager.update(events) # Update sound manager
-        for event in events:
-            if event.type == pygame.QUIT:   
-                pygame.quit()
-                sys.exit()
-            
-        scene_manager.active_scene.update(constants.DELTA_TIME, events)  # Update the scene
+    # Render scene to placeholder
+    # For now, just display scene name or score (replace with actual render logic)
+    screen_placeholder.text(f"Current Scene: {scene_manager.active_scene.name}")
 
-        pygame.display.flip()  # Update the display
-        clock.tick(constants.FRAMERATE)  # Limit the framerate
+# Game control buttons
+col1, col2 = st.columns(2)
+with col1:
+    if st.button("Update Game"):
+        update_game()
 
-if __name__ == "__main__":
-    main()  # Run the main function
+with col2:
+    if st.button("Quit Game"):
+        st.session_state.game_running = False
+        st.success("Game stopped.")
+
+# Auto-update every X seconds (optional)
+if st.session_state.game_running:
+    while st.session_state.game_running:
+        update_game()
+        time.sleep(1 / constants.FRAMERATE)  # simulate framerate
